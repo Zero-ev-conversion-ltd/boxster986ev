@@ -10,7 +10,7 @@
 
 EEPROMSettings settings;
 
-unsigned long looptime, canlooptime = 0;
+unsigned long looptime, canlooptime, gaugeresettime = 0;
 
 long unsigned int rxId;
 unsigned char len = 0;
@@ -33,13 +33,14 @@ int tempguageval = 0;
 int fuel_direction_pin = 6;
 int fuel_fuel_step_pin = 7;
 
-int full_sweep_steps = 392;
+int full_sweep_steps = 385;
 
 int desiredposition = 0;
 int actualposition = 0;
 int SOC = 0;
 
 int highestTemp = 0;
+bool usersetsoc = false;
 
 
 //---------PWM Pump Control -------//
@@ -100,14 +101,13 @@ void setup(){
  
   //Wind dial anticlockwise at startup to calibrate
   digitalWrite(fuel_direction_pin, HIGH);
-  for (int i = 0; i <= full_sweep_steps*4; i++) {
+  for (int i = 0; i <= full_sweep_steps*1; i++) {
     digitalWrite(fuel_fuel_step_pin, HIGH);
     delay(1);
     digitalWrite(fuel_fuel_step_pin, LOW);
   }
-
+  
   //Dial sweep
-
   tempguageval = 139;
   MotorSpeed = 8000;
   cansend();
@@ -137,11 +137,12 @@ void loop(){
 
   //Check serial and go to menu
   if (Serial.available() > 0){
-    menu();
-    //int tempval = Serial.parseInt();
-    //Serial.println(tempval);
-    //if (tempval > 0){tempguageval = tempval;}
-    //Serial.println(tempguageval);
+    //menu();
+    int inputval = Serial.parseInt();
+    if (inputval > 0){
+      SOC = inputval;
+    }
+    usersetsoc = true;
   }
 
   if (canactive == 1){cantime = millis();}
@@ -151,6 +152,12 @@ void loop(){
   if (millis() - canlooptime > 200){
     cansend();
     canlooptime = millis();
+  }
+
+  //Re-calibrate gauge every 3 minutes
+  if (millis() - gaugeresettime > 180000){
+    gaugeReset();
+    gaugeresettime = millis();
   }
 
   //Fan control every 500ms
@@ -209,6 +216,22 @@ void loop(){
   }
   movefuelguageneedle();
   wdt_reset(); 
+}
+
+void gaugeReset(){
+
+  int amountofstepstorewind = map(SOC, 0, 100, full_sweep_steps, 0);
+  amountofstepstorewind = amountofstepstorewind + 50;
+  digitalWrite(fuel_direction_pin, HIGH);
+  for (int i = 0; i <= amountofstepstorewind; i++) {
+    digitalWrite(fuel_fuel_step_pin, HIGH);
+    delay(1);
+    digitalWrite(fuel_fuel_step_pin, LOW);
+  }
+
+  //let movefuelguageneedle know it has been reset
+  actualposition = 0;
+  Serial.println(amountofstepstorewind);
 }
 
 void menu(){
@@ -386,7 +409,9 @@ void candecode(){
 
   //SOC
   if (rxId == 0x355){
-    SOC = rxBuf[1]/2;
+    if (!usersetsoc){
+      SOC = rxBuf[1]/2;
+    }
     desiredposition = map(SOC, 0, 100, full_sweep_steps, 0);
     canactive = 1;
   }
