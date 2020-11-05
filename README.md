@@ -1,3 +1,3 @@
-# Boxster986controller
+# Boxster986EV
 
-Arduino based ECU that talks to boxster CANBUS network, controls gauges and fans
+Repository for the Zero-EV 986 Boxster
