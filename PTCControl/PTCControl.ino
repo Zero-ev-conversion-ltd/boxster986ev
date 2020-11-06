@@ -8,7 +8,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 double currentTemperature;
-double desiredTemperature = 21.00;
+double desiredTemperature = 19.80;
 double tempHysteris = 0.1;
 
  
@@ -19,6 +19,7 @@ void setup(void) {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(PTC_OUTPUT, LOW);
   sensors.begin();
+  delay(1000);
 }
  
  

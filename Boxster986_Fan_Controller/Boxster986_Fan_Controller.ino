@@ -42,6 +42,11 @@ int SOC = 0;
 int highestTemp = 0;
 bool usersetsoc = false;
 
+int DCL = 0;
+int DCL32 = 0;
+int throtmax = 0;
+int throtmax32 = 0;
+
 
 //---------PWM Pump Control -------//
 const int motorPWMpin = 10;
@@ -101,7 +106,7 @@ void setup(){
  
   //Wind dial anticlockwise at startup to calibrate
   digitalWrite(fuel_direction_pin, HIGH);
-  for (int i = 0; i <= full_sweep_steps*1; i++) {
+  for (int i = 0; i <= full_sweep_steps*3; i++) {
     digitalWrite(fuel_fuel_step_pin, HIGH);
     delay(1);
     digitalWrite(fuel_fuel_step_pin, LOW);
@@ -149,7 +154,7 @@ void loop(){
   else {if (millis() - cantime > 2000){canactive = 0;}}
 
   //Send CAN every 200ms
-  if (millis() - canlooptime > 200){
+  if (millis() - canlooptime > 100){
     cansend();
     canlooptime = millis();
   }
@@ -162,7 +167,7 @@ void loop(){
 
   //Fan control every 500ms
   if (millis() - looptime > 500){
-    cansend();
+    //cansend();
     looptime = millis();
     if (debug == 1)
     {
@@ -190,6 +195,12 @@ void loop(){
       Serial.println("%");
       Serial.print("Can Active : ");
       Serial.print(canactive);
+      Serial.println();
+      Serial.print("DCL : ");
+      Serial.print(DCL);
+      Serial.println();
+      Serial.print("Calc Throtmax : ");
+      Serial.print(throtmax);
       Serial.println();
       Serial.println();
     }
@@ -416,6 +427,19 @@ void candecode(){
     canactive = 1;
   }
 
+  if (rxId == 0x6B1){
+    String tempbyte00 = toBinary(rxBuf[0], 8);
+    String tempbyte01 = toBinary(rxBuf[1], 8);
+    String tempbyte01DCL = tempbyte00 + tempbyte01;
+    char tempbyte01DCLarray[17];
+    tempbyte01DCL.toCharArray(tempbyte01DCLarray,17);
+    DCL = strtol(tempbyte01DCLarray, NULL, 2);
+    throtmax = map(DCL, 0, 400, 30, 100);
+    //throtmax = 31;
+    throtmax32 = throtmax * 32;
+    DCL32 = DCL * 32;
+  }
+
   if (rxId == 0x356){
     String tempbyte2 = toBinary(rxBuf[2], 8);
     String tempbyte3 = toBinary(rxBuf[3], 8);
@@ -520,4 +544,47 @@ void cansend(){
   mes[6] = 0x00;
   mes[7] = 0x00;
   CAN0.sendMsgBuf(id, 0, 8, mes);
+
+  //Serial.println(DCL32);
+  String DCLbinary = toBinary(throtmax32, 32);
+  //Serial.println(DCLbinary);
+
+  String byte0 = DCLbinary.substring(0,8);
+  //Serial.print(byte0);
+  String byte1 = DCLbinary.substring(8,16);
+  //Serial.print(byte1);
+  String byte2 = DCLbinary.substring(16,24);
+  //Serial.print(byte2);
+  String byte3 = DCLbinary.substring(24,32);
+  //Serial.println(byte3);
+
+  char temp0[16];
+  char temp1[16];
+  char temp2[16];
+  char temp3[16];
+
+  byte0.toCharArray(temp0, 16);
+  byte1.toCharArray(temp1, 16);
+  byte2.toCharArray(temp2, 16);
+  byte3.toCharArray(temp3, 16);
+
+  int temp0int = strtol(temp0, NULL, 2);
+  int temp1int = strtol(temp1, NULL, 2);
+  int temp2int = strtol(temp2, NULL, 2);
+  int temp3int = strtol(temp3, NULL, 2);
+
+  //DCL To Inverter
+  
+  id = 0x601;
+  mes[0] = 0x40;  //set
+  mes[1] = 0x00;
+  mes[2] = 0x20;
+  mes[3] = 0x30;  //idcmax index (23),,,,,, throtmax (30)
+  mes[4] = temp3int;
+  mes[5] = temp2int;
+  mes[6] = temp1int;
+  mes[7] = temp0int;
+  CAN0.sendMsgBuf(id, 0, 8, mes);
+  
+  
 }
