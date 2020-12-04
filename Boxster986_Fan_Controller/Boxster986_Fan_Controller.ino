@@ -7,8 +7,18 @@
 #include <avr/wdt.h>
 #include <Arduino.h>
 #include <PWM.h>
+#include <FastLED.h>
 
 EEPROMSettings settings;
+
+//Led ring pin
+#define ledRing    4
+#define LED_TYPE    WS2811
+#define COLOR_ORDER GRB
+#define NUM_LEDS    64
+CRGB leds[NUM_LEDS];
+#define BRIGHTNESS          100
+#define FRAMES_PER_SECOND  60
 
 unsigned long looptime, canlooptime, gaugeresettime = 0;
 
@@ -73,6 +83,11 @@ void loadSettings(){
 void setup(){
   Serial.begin(115200);
   Serial.setTimeout(20);
+
+  //FastLED.addLeds<LED_TYPE,ledRing,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  // set master brightness control
+  //FastLED.setBrightness(BRIGHTNESS);
+  //FastLED.show(); 
 
   // Initialize MCP2515 running at 16MHz with a baudrate of 500kb/s and the masks and filters disabled.
   if (CAN0.begin(MCP_ANY, CAN_500KBPS, MCP_8MHZ) == CAN_OK)
@@ -408,7 +423,7 @@ void candecode(){
 
   //Inverter Temp
   if (rxId == 0x126){
-    InverterTemp = rxBuf[7];
+    InverterTemp = rxBuf[0];
     canactive = 1;
   }
 
@@ -464,7 +479,7 @@ void candecode(){
   //Convert to farenheit
   //highestTemp = (highestTemp*1.8) + 32;
   //Map to guage value
-  //Serial.println(highestTemp);
+  //Serial.println(tempguageval);
   tempguageval = map(highestTemp, -5, 50, 0, 55);  
   
   if (debug == 1){
@@ -574,7 +589,7 @@ void cansend(){
   int temp3int = strtol(temp3, NULL, 2);
 
   //DCL To Inverter
-  
+  /*
   id = 0x601;
   mes[0] = 0x40;  //set
   mes[1] = 0x00;
@@ -585,6 +600,6 @@ void cansend(){
   mes[6] = temp1int;
   mes[7] = temp0int;
   CAN0.sendMsgBuf(id, 0, 8, mes);
-  
+  */
   
 }

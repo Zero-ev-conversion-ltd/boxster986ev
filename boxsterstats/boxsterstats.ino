@@ -67,7 +67,7 @@ void canread(){
       
     
     case 0x126:
-       motortemp = inMsg.buf[7];
+       motortemp = inMsg.buf[0];
        
       break; 
     case 0x355:
