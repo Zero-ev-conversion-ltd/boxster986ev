@@ -57,6 +57,8 @@ int DCL32 = 0;
 int throtmax = 0;
 int throtmax32 = 0;
 
+bool errorBMS = false;
+
 
 //---------PWM Pump Control -------//
 const int motorPWMpin = 10;
@@ -216,6 +218,10 @@ void loop(){
       Serial.println();
       Serial.print("Calc Throtmax : ");
       Serial.print(throtmax);
+      Serial.println();
+      Serial.print("BMS Errors : ");
+      if(errorBMS){Serial.println("Yes");}
+      else{Serial.println("No");}
       Serial.println();
       Serial.println();
     }
@@ -433,6 +439,17 @@ void candecode(){
     canactive = 1;
   }
 
+  //BMS Errors
+  if (rxId == 0x35A){
+    int dtc1_0 = rxBuf[0];
+    int dtc1_1 = rxBuf[1];
+    int dtc2_0 = rxBuf[2];
+    int dtc2_1 = rxBuf[3];
+
+    if (dtc1_0 > 0 || dtc1_1 > 0 || dtc2_0 > 0 || dtc2_1 > 0){errorBMS = 1;}else{errorBMS = 0;}
+    canactive = 1;
+  }
+
   //SOC
   if (rxId == 0x355){
     if (!usersetsoc){
@@ -535,7 +552,7 @@ void cansend(){
   mes[7] = 0x00;
   CAN0.sendMsgBuf(id, 0, 8, mes);
   delay(4);
-  if(canactive){
+  if(!errorBMS){
     //Engine MIL Light
     id = 0x4E0;
     mes[0] = 0x00;
@@ -589,7 +606,7 @@ void cansend(){
   int temp3int = strtol(temp3, NULL, 2);
 
   //DCL To Inverter
-  /*
+  
   id = 0x601;
   mes[0] = 0x40;  //set
   mes[1] = 0x00;
@@ -600,6 +617,6 @@ void cansend(){
   mes[6] = temp1int;
   mes[7] = temp0int;
   CAN0.sendMsgBuf(id, 0, 8, mes);
-  */
+  
   
 }
