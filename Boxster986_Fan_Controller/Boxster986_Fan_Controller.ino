@@ -15,10 +15,10 @@ EEPROMSettings settings;
 #define ledRing    4
 #define LED_TYPE    WS2811
 #define COLOR_ORDER GRB
-#define NUM_LEDS    64
+#define NUM_LEDS    24
 CRGB leds[NUM_LEDS];
 #define BRIGHTNESS          100
-#define FRAMES_PER_SECOND  60
+#define FRAMES_PER_SECOND  120
 
 unsigned long looptime, canlooptime, gaugeresettime = 0;
 
@@ -59,6 +59,8 @@ int throtmax32 = 0;
 
 bool errorBMS = false;
 
+int gear = 0;
+
 
 //---------PWM Pump Control -------//
 const int motorPWMpin = 10;
@@ -86,10 +88,10 @@ void setup(){
   Serial.begin(115200);
   Serial.setTimeout(20);
 
-  //FastLED.addLeds<LED_TYPE,ledRing,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<LED_TYPE,ledRing,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   // set master brightness control
-  //FastLED.setBrightness(BRIGHTNESS);
-  //FastLED.show(); 
+  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.show(); 
 
   // Initialize MCP2515 running at 16MHz with a baudrate of 500kb/s and the masks and filters disabled.
   if (CAN0.begin(MCP_ANY, CAN_500KBPS, MCP_8MHZ) == CAN_OK)
@@ -219,6 +221,9 @@ void loop(){
       Serial.print("Calc Throtmax : ");
       Serial.print(throtmax);
       Serial.println();
+      Serial.print("Gear : ");
+      Serial.print(gear);
+      Serial.println();
       Serial.print("BMS Errors : ");
       if(errorBMS){Serial.println("Yes");}
       else{Serial.println("No");}
@@ -245,9 +250,62 @@ void loop(){
     }
     else{digitalWrite(Fan1, HIGH);}
     canactive = 0;
+
+    //Neutral
+    if(gear == 0){
+      ledSOC(SOC);
+    }
+    //Drive
+    if(gear == 1){
+      ledBrakelight();
+    }
+    //Reverse
+    if(gear == 255){
+      ledReverse();
+    }
+    
   }
   movefuelguageneedle();
   wdt_reset(); 
+}
+
+void ledSOC(int socinput){
+
+  int amountgreen = map(socinput, 0, 100, 0, NUM_LEDS);
+  int amountred = NUM_LEDS - amountgreen;
+  /*
+  Serial.print("Amount green:");
+  Serial.println(amountgreen);
+  Serial.print("Amount red:");
+  Serial.println(amountred);
+  */
+
+  for(int i=0;i<amountgreen;i++){
+      leds[i].setRGB(0,255,0);
+      leds[i].fadeLightBy(BRIGHTNESS);
+  }
+  for(int j=0;j<amountred;j++){
+      leds[amountgreen+j].setRGB(255,0,0);
+      leds[amountgreen+j].fadeLightBy(BRIGHTNESS);
+  }
+  FastLED.show();
+  
+}
+
+void ledBrakelight(){
+  for(int i=0;i<NUM_LEDS;i++){
+      leds[i].setRGB(255,0,0);
+      leds[i].fadeLightBy(BRIGHTNESS);
+  }
+  FastLED.show();
+}
+
+void ledReverse(){
+  for(int i=0;i<NUM_LEDS;i++){
+      leds[i].setRGB(255,255,255);
+      leds[i].fadeLightBy(BRIGHTNESS);
+  }
+  FastLED.show();
 }
 
 void gaugeReset(){
@@ -430,6 +488,12 @@ void candecode(){
   //Inverter Temp
   if (rxId == 0x126){
     InverterTemp = rxBuf[0];
+    canactive = 1;
+  }
+
+  //Gear
+  if (rxId == 0x127){
+    gear = rxBuf[0];
     canactive = 1;
   }
 
