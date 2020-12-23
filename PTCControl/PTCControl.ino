@@ -8,7 +8,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 double currentTemperature;
-double desiredTemperature = 19.80;
+double desiredTemperature = 22.50;
 double tempHysteris = 0.1;
 
  
