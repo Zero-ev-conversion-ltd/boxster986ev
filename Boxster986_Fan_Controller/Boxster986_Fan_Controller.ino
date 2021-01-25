@@ -482,12 +482,18 @@ void candecode(){
   //Battery Temp
   if (rxId == 0x356){
     BatteryTemp = rxBuf[5];
+    if(BatteryTemp > 200){
+      BatteryTemp = 0;
+    }
     canactive = 1;
   }
 
   //Inverter Temp
   if (rxId == 0x126){
     InverterTemp = rxBuf[0];
+    if(InverterTemp > 200){
+      InverterTemp = 0;
+    }
     canactive = 1;
   }
 
