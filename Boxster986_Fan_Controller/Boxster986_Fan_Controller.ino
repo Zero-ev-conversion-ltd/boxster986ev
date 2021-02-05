@@ -622,7 +622,7 @@ void cansend(){
   mes[7] = 0x00;
   CAN0.sendMsgBuf(id, 0, 8, mes);
   delay(4);
-  if(!errorBMS){
+  //if(!errorBMS){
     //Engine MIL Light
     id = 0x4E0;
     mes[0] = 0x00;
@@ -635,7 +635,7 @@ void cansend(){
     mes[7] = 0x00;
     CAN0.sendMsgBuf(id, 0, 8, mes);
     delay(4);
-  }
+  //}
   id = 0x280;
   mes[0] = 0x00;
   mes[1] = 0x00;
