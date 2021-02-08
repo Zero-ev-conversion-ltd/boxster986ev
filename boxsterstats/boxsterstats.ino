@@ -1,5 +1,7 @@
 #include <FlexCAN.h>
 #include <evilOLED.h>
+#include <CANBUS.h>      //https://github.com/seb43654/canbus-interpreter
+CANBUS canbus;           //Initiate class for canbus-interpreter
 
 int sda = 18;
 int scl = 19;
@@ -59,25 +61,31 @@ void canread(){
 
   switch (inMsg.id){
 
-    
+    //Batterystatus
     case 0x356:
-        batterytemp = inMsg.buf[5];
-        interpretCurrent(inMsg);
+        batterytemp = canbus.decode(inMsg, 32, 16, "LSB", "SIGNED", 0.1, 0);
+        current = canbus.decode(inMsg, 16, 16, "LSB", "SIGNED", 0.1, 0);  
       break;
-      
-    
+
+    //Tesla drive unit
     case 0x126:
        motortemp = inMsg.buf[0];
        
       break; 
-    case 0x355:
-       soc = inMsg.buf[1]/2;
-      break;
-    case 0x351:     
-      intepretCurrentLimits(inMsg);
-      break;
-     case 0x35C:
 
+    //BmsSOC
+    case 0x355:
+       soc = canbus.decode(inMsg, 0, 16, "LSB", "UNSIGNED", 1, 0);
+      break;
+    
+    //BMSLimits
+    case 0x351:     
+      dcl = canbus.decode(inMsg, 32, 16, "LSB", "UNSIGNED", 0.1, 0);
+      ccl = canbus.decode(inMsg, 16, 16, "LSB", "UNSIGNED", 0.1, 0);
+      break;
+
+    //Cell voltages
+    case 0x35C:
         String tempbyte02 = toBinary(inMsg.buf[0], 8);
         String tempbyte12 = toBinary(inMsg.buf[1], 8);
         String tempbyte22 = toBinary(inMsg.buf[2], 8);
@@ -195,6 +203,8 @@ void updateDisplay(){
   disp.setCursor(10, 2);
   disp.putString(">");
   disp.setCursor(11, 2);
+  disp.putString("    ");
+  disp.setCursor(11, 2);
   disp.putString(low2int);
   disp.setCursor(0, 3);
   disp.putString(" HI CELL:");
@@ -203,9 +213,13 @@ void updateDisplay(){
   disp.setCursor(10, 3);
   disp.putString(">");
   disp.setCursor(11, 3);
+  disp.putString("    ");
+  disp.setCursor(11, 3);
   disp.putString(high2int);
   disp.setCursor(0, 4);
   disp.putString("     SOC:");
+  disp.setCursor(9, 4);
+  disp.putString("     ");
   disp.setCursor(9, 4);
   disp.putString(soc);
   disp.setCursor(0, 5);
@@ -217,13 +231,13 @@ void updateDisplay(){
   disp.setCursor(0, 6);
   disp.putString("     DCL:");
   disp.setCursor(9, 6);
-  disp.putString("    ");
+  disp.putString("     ");
   disp.setCursor(9, 6);
   disp.putString(dcl);
   disp.setCursor(0, 7);
   disp.putString(" CURRENT:");
   disp.setCursor(9, 7);
-  disp.putString("    ");
+  disp.putString("     ");
   disp.setCursor(9, 7);
   disp.putString(current);
 }
