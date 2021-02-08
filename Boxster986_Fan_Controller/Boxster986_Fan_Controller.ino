@@ -8,6 +8,8 @@
 #include <Arduino.h>
 #include <PWM.h>
 #include <FastLED.h>
+#include "CANBUS.h"
+CANBUS canbus;           //Initiate class for canbus-interpreter
 
 EEPROMSettings settings;
 
@@ -481,7 +483,8 @@ void candecode(){
 
   //Battery Temp
   if (rxId == 0x356){
-    BatteryTemp = rxBuf[5];
+    //BatteryTemp = rxBuf[5];
+    BatteryTemp = canbus.decode(rxBuf, len, 32, 16, "LSB", "SIGNED", 0.1, 0);
     if(BatteryTemp > 200){
       BatteryTemp = 0;
     }
@@ -515,49 +518,38 @@ void candecode(){
     int dtc1_1 = rxBuf[1];
     int dtc2_0 = rxBuf[2];
     int dtc2_1 = rxBuf[3];
-
-    if (dtc1_0 > 0 || dtc1_1 > 0 || dtc2_0 > 0 || dtc2_1 > 0){errorBMS = 1;}else{errorBMS = 0;}
+    if (dtc1_0 > 0 || dtc1_1 > 0 || dtc2_0 > 0 || dtc2_1 > 0){errorBMS = 1;} else{errorBMS = 0;}
     canactive = 1;
   }
 
   //SOC
   if (rxId == 0x355){
     if (!usersetsoc){
-      SOC = rxBuf[1]/2;
+      //SOC = rxBuf[1]/2;
+      SOC = canbus.decode(rxBuf, len, 0, 16, "LSB", "UNSIGNED", 1, 0);
     }
     desiredposition = map(SOC, 0, 100, full_sweep_steps, 0);
     canactive = 1;
   }
 
-  if (rxId == 0x6B1){
-    String tempbyte00 = toBinary(rxBuf[0], 8);
-    String tempbyte01 = toBinary(rxBuf[1], 8);
-    String tempbyte01DCL = tempbyte00 + tempbyte01;
-    char tempbyte01DCLarray[17];
-    tempbyte01DCL.toCharArray(tempbyte01DCLarray,17);
-    DCL = strtol(tempbyte01DCLarray, NULL, 2);
+  //BMS Limits
+  if (rxId == 0x351){
+    DCL = canbus.decode(rxBuf, len, 32, 16, "LSB", "UNSIGNED", 0.1, 0);
     throtmax = map(DCL, 0, 400, 30, 100);
     //throtmax = 31;
     throtmax32 = throtmax * 32;
     DCL32 = DCL * 32;
   }
 
-  if (rxId == 0x356){
-    String tempbyte2 = toBinary(rxBuf[2], 8);
-    String tempbyte3 = toBinary(rxBuf[3], 8);
-    String tempbyte23packCurrent = tempbyte2 + tempbyte3;
-    char tempbyte23packCurrentarray[17];
-    tempbyte23packCurrent.toCharArray(tempbyte23packCurrentarray,17);
-    packCurrent = strtol(tempbyte23packCurrentarray, NULL, 2);
-    if(packCurrent > 32767){packCurrent = packCurrent - 65535;};
+  //Batterystatus
+  if (rxId == 0x356){    
+    packCurrent = canbus.decode(rxBuf, len, 16, 16, "LSB", "SIGNED", 0.1, 0);
     //Devide by 10 and make number positive
-    packCurrent = abs(packCurrent)/10;
+    packCurrent = abs(packCurrent);
     //Map to have 0 amps at 4k rpm
     MotorSpeed = map(packCurrent, 0, 400, 0, 4000); 
     canactive = 1;
   }
-
-  
 
   //Get highest of two temperatures
   if(InverterTemp > BatteryTemp){highestTemp = InverterTemp;}
