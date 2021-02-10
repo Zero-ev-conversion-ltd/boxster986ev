@@ -68,9 +68,8 @@ void canread(){
       break;
 
     //Tesla drive unit
-    case 0x126:
-       motortemp = inMsg.buf[0];
-       
+    case 0x125:
+       motortemp = inMsg.buf[7];
       break; 
 
     //BmsSOC

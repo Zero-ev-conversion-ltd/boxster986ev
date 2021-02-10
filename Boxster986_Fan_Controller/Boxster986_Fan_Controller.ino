@@ -492,23 +492,18 @@ void candecode(){
   }
 
   //Inverter Temp
-  if (rxId == 0x126){
-    InverterTemp = rxBuf[0];
+  if (rxId == 0x125){
+    InverterTemp = rxBuf[7];
     if(InverterTemp > 200){
       InverterTemp = 0;
     }
     canactive = 1;
   }
 
-  //Gear
-  if (rxId == 0x127){
-    gear = rxBuf[0];
-    canactive = 1;
-  }
-
-  //Pack Current
+  //DU Status
   if (rxId == 0x126){
     //MotorSpeed = rxBuf[2]<8 + rxBuf[3];
+    gear = rxBuf[1];
     canactive = 1;
   }
 
