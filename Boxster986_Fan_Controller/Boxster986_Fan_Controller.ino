@@ -262,7 +262,7 @@ void loop(){
       ledBrakelight();
     }
     //Reverse
-    if(gear == 255){
+    if(gear == 15){
       ledReverse();
     }
     
@@ -503,7 +503,7 @@ void candecode(){
   //DU Status
   if (rxId == 0x126){
     //MotorSpeed = rxBuf[2]<8 + rxBuf[3];
-    gear = rxBuf[1];
+    gear = canbus.decode(rxBuf, len, 8, 8, "LSB", "UNSIGNED", 1, 0);
     canactive = 1;
   }
 
