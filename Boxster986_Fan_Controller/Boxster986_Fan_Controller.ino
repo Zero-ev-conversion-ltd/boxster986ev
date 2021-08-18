@@ -491,19 +491,16 @@ void candecode(){
     canactive = 1;
   }
 
-  //Inverter Temp
+  //DU1 Feedback
   if (rxId == 0x125){
-    InverterTemp = rxBuf[7];
-    if(InverterTemp > 200){
-      InverterTemp = 0;
-    }
+
     canactive = 1;
   }
 
-  //DU Status
+  //DU1 Status
   if (rxId == 0x126){
-    //MotorSpeed = rxBuf[2]<8 + rxBuf[3];
-    gear = canbus.decode(rxBuf, len, 8, 8, "LSB", "UNSIGNED", 1, 0);
+    gear = canbus.decode(rxBuf, len, 8, 4, "LSB", "UNSIGNED", 1, 0);
+    InverterTemp = canbus.decode(rxBuf, len, 32, 16, "LSB", "SIGNED", 1, 0);
     canactive = 1;
   }
 
