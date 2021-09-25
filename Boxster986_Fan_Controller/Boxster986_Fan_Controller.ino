@@ -229,6 +229,8 @@ void loop(){
       Serial.print("BMS Errors : ");
       if(errorBMS){Serial.println("Yes");}
       else{Serial.println("No");}
+      Serial.print("idcmax sent to Drive unit: ");
+      Serial.println(DCL32/32);
       Serial.println();
       Serial.println();
     }
@@ -530,7 +532,7 @@ void candecode(){
     throtmax = map(DCL, 0, 400, 30, 100);
     //throtmax = 31;
     throtmax32 = throtmax * 32;
-    DCL32 = DCL * 32;
+    DCL32 = (DCL/2) * 32;     //DEVIDE BY TWO TO CORRECT INNACURACY OF DU DC BUS MEASURE
   }
 
   //Batterystatus
@@ -631,8 +633,9 @@ void cansend(){
   mes[7] = 0x00;
   CAN0.sendMsgBuf(id, 0, 8, mes);
 
-  //Serial.println(DCL32);
-  String DCLbinary = toBinary(throtmax32, 32);
+  //Serial.println(DCL32/32);
+  //String DCLbinary = toBinary(throtmax32, 32);
+  String DCLbinary = toBinary(DCL32, 32);
   //Serial.println(DCLbinary);
 
   String byte0 = DCLbinary.substring(0,8);
@@ -665,7 +668,7 @@ void cansend(){
   mes[0] = 0x40;  //set
   mes[1] = 0x00;
   mes[2] = 0x20;
-  mes[3] = 0x30;  //idcmax index (23),,,,,, throtmax (30)
+  mes[3] = 0x23;  //idcmax index (23),,,,,, throtmax (30)
   mes[4] = temp3int;
   mes[5] = temp2int;
   mes[6] = temp1int;
