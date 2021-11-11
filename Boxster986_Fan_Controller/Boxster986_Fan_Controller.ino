@@ -174,8 +174,8 @@ void loop(){
   if (canactive == 1){cantime = millis();}
   else {if (millis() - cantime > 2000){canactive = 0;}}
 
-  //Send CAN every 200ms
-  if (millis() - canlooptime > 100){
+  //Send CAN every 80ms
+  if (millis() - canlooptime > 80){
     cansend();
     canlooptime = millis();
   }
@@ -269,6 +269,7 @@ void loop(){
     }
     
   }
+  
   movefuelguageneedle();
   wdt_reset(); 
 }
@@ -412,8 +413,7 @@ void menu(){
         break;
     }
   }
-  if (menuload == 0)
-  {
+  if (menuload == 0){
     switch (incomingByte){
       case 's': //Setup
         debug = 0;
@@ -495,7 +495,6 @@ void candecode(){
 
   //DU1 Feedback
   if (rxId == 0x125){
-
     canactive = 1;
   }
 
@@ -530,9 +529,8 @@ void candecode(){
   if (rxId == 0x351){
     DCL = canbus.decode(rxBuf, len, 32, 16, "LSB", "UNSIGNED", 0.1, 0);
     throtmax = map(DCL, 0, 400, 30, 100);
-    //throtmax = 31;
     throtmax32 = throtmax * 32;
-    DCL32 = (DCL/2) * 32;     //DEVIDE BY TWO TO CORRECT INNACURACY OF DU DC BUS MEASURE
+    DCL32 = (DCL) * 32;     //DEVIDE BY TWO TO CORRECT INNACURACY OF DU DC BUS MEASURE
   }
 
   //Batterystatus
@@ -608,6 +606,7 @@ void cansend(){
   mes[7] = 0x00;
   CAN0.sendMsgBuf(id, 0, 8, mes);
   delay(4);
+  
   //if(!errorBMS){
     //Engine MIL Light
     id = 0x4E0;
@@ -622,6 +621,7 @@ void cansend(){
     CAN0.sendMsgBuf(id, 0, 8, mes);
     delay(4);
   //}
+  
   id = 0x280;
   mes[0] = 0x00;
   mes[1] = 0x00;
@@ -663,7 +663,6 @@ void cansend(){
   int temp3int = strtol(temp3, NULL, 2);
 
   //DCL To Inverter
-  
   id = 0x601;
   mes[0] = 0x40;  //set
   mes[1] = 0x00;
@@ -674,6 +673,4 @@ void cansend(){
   mes[6] = temp1int;
   mes[7] = temp0int;
   CAN0.sendMsgBuf(id, 0, 8, mes);
-  
-  
 }
