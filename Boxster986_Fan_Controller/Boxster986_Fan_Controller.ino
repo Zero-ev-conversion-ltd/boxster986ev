@@ -1,5 +1,3 @@
-// CAN Receive Example
-//
 #include <EEPROM.h>
 #include "config.h"
 #include <mcp_can.h>
@@ -631,46 +629,5 @@ void cansend(){
   mes[5] = 0x00;
   mes[6] = 0x00;
   mes[7] = 0x00;
-  CAN0.sendMsgBuf(id, 0, 8, mes);
-
-  //Serial.println(DCL32/32);
-  //String DCLbinary = toBinary(throtmax32, 32);
-  String DCLbinary = toBinary(DCL32, 32);
-  //Serial.println(DCLbinary);
-
-  String byte0 = DCLbinary.substring(0,8);
-  //Serial.print(byte0);
-  String byte1 = DCLbinary.substring(8,16);
-  //Serial.print(byte1);
-  String byte2 = DCLbinary.substring(16,24);
-  //Serial.print(byte2);
-  String byte3 = DCLbinary.substring(24,32);
-  //Serial.println(byte3);
-
-  char temp0[16];
-  char temp1[16];
-  char temp2[16];
-  char temp3[16];
-
-  byte0.toCharArray(temp0, 16);
-  byte1.toCharArray(temp1, 16);
-  byte2.toCharArray(temp2, 16);
-  byte3.toCharArray(temp3, 16);
-
-  int temp0int = strtol(temp0, NULL, 2);
-  int temp1int = strtol(temp1, NULL, 2);
-  int temp2int = strtol(temp2, NULL, 2);
-  int temp3int = strtol(temp3, NULL, 2);
-
-  //DCL To Inverter
-  id = 0x601;
-  mes[0] = 0x40;  //set
-  mes[1] = 0x00;
-  mes[2] = 0x20;
-  mes[3] = 0x23;  //idcmax index (23),,,,,, throtmax (30)
-  mes[4] = temp3int;
-  mes[5] = temp2int;
-  mes[6] = temp1int;
-  mes[7] = temp0int;
   CAN0.sendMsgBuf(id, 0, 8, mes);
 }
